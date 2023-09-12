@@ -88,3 +88,45 @@ Where Dea.continent is not NULL
 Select *, (accumulatedPeopleVaccinated/population)*100 PercentageVaccinated
 FROM PopvsVac
 Order By 2, 3
+
+-- Temp Table
+Drop Table if exists #PercentPopulationVaccinated
+Create Table #PercentPopulationVaccinated
+(
+	Continent nvarchar(255),
+	Location nvarchar(255),
+	Date datetime,
+	Population numeric,
+	NewVaccinations numeric,
+	AccumulatedPeopleVaccinated numeric
+)
+
+
+Insert Into #PercentPopulationVaccinated
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations, 
+SUM(CONVERT(bigint,vac.new_vaccinations)) OVER (PARTITION BY dea.location Order By dea.location, dea.date) as AccumulatedPeopleVaccinated
+From PortfolioProject..CovidDeaths$ Dea
+Join PortfolioProject..CovidVaccinations$ Vac
+	On Dea.location = Vac.location
+	AND Dea.date = Vac.date
+--Where Dea.continent is not NULL
+--Order By 2, 3
+
+Select *, (accumulatedPeopleVaccinated/population)*100 PercentageVaccinated
+From #PercentPopulationVaccinated
+Order By 2, 3
+
+--Creating View For Later Data Visualization
+Create view PercentPopulationVaccinated as
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations, 
+SUM(CONVERT(bigint,vac.new_vaccinations)) OVER (PARTITION BY dea.location Order By dea.location, dea.date) as AccumulatedPeopleVaccinated
+From PortfolioProject..CovidDeaths$ Dea
+Join PortfolioProject..CovidVaccinations$ Vac
+	On Dea.location = Vac.location
+	AND Dea.date = Vac.date
+Where Dea.continent is not NULL
+--Order By 2, 3
+
+Select * 
+From PercentPopulationVaccinated
+Order By 2, 3
